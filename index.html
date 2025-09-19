@@ -1,0 +1,342 @@
+Can't create, edit, or upload … Not enough storage to save to Drive, back up Google Photos, or use Gmail. Get 30 GB of storage for ₹59 ₹0 for 1 month.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romantic Neon Heart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap');
+        
+        .neon-glow {
+            filter: drop-shadow(0 0 10px #ff1744) drop-shadow(0 0 20px #ff1744) drop-shadow(0 0 30px #ff1744);
+        }
+        
+        .heart-glow {
+            filter: drop-shadow(0 0 15px #ff1744) drop-shadow(0 0 25px #ff1744) drop-shadow(0 0 40px #ff1744);
+        }
+        
+        .text-neon {
+            text-shadow: 0 0 10px #ff1744, 0 0 20px #ff1744, 0 0 30px #ff1744;
+        }
+        
+        .button-glow {
+            box-shadow: 0 0 20px rgba(255, 23, 68, 0.5), inset 0 0 20px rgba(255, 23, 68, 0.1);
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff1744;
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+        
+        .heading-neon {
+            text-shadow: 0 0 15px #ff1744, 0 0 25px #ff1744, 0 0 35px #ff1744;
+        }
+        
+        body {
+            font-family: 'Dancing Script', cursive;
+            background: linear-gradient(135deg, #080205 0%, #1a0a12 50%, #080205 100%);
+            overflow-x: hidden;
+        }
+        
+        .lyrics-font {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#080205] text-white flex flex-col items-center justify-center relative">
+    
+    <!-- Floating Particles Container -->
+    <div id="particles-container" class="fixed inset-0 pointer-events-none z-0"></div>
+    
+    <div class="relative z-10 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4">
+        
+        <!-- Love You Heading -->
+        <h1 class="heading-neon text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-center mb-8 text-pink-400">
+            Love You
+        </h1>
+        
+        <!-- Main Heart Container -->
+        <div class="relative flex items-center justify-center mb-8 w-full">
+            <svg id="heart-svg" class="heart-glow w-80 h-80 sm:w-96 sm:h-96 md:w-[30rem] md:h-[30rem]" viewBox="0 0 400 400">
+                <!-- Heart Path -->
+                <path id="heart-path" 
+                      d="M200,300 C200,300 350,200 350,120 C350,80 320,50 280,50 C240,50 200,80 200,120 C200,80 160,50 120,50 C80,50 50,80 50,120 C50,200 200,300 200,300 Z" 
+                      fill="none" 
+                      stroke="#ff1744" 
+                      stroke-width="3" 
+                      stroke-linecap="round" 
+                      stroke-linejoin="round"/>
+                
+                <!-- Moving Spark -->
+                <circle id="spark" 
+                        r="6" 
+                        fill="#ffffff" 
+                        class="neon-glow opacity-0">
+                    <animate attributeName="r" 
+                             values="4;8;4" 
+                             dur="1s" 
+                             repeatCount="indefinite"/>
+                </circle>
+                
+                <!-- Lyrics Display Inside Heart -->
+                <foreignObject x="80" y="140" width="240" height="120">
+                      <div class="flex flex-col items-center justify-center h-full text-center">
+                        <div id="current-lyric" class="lyrics-font text-lg sm:text-xl md:text-2xl font-bold text-neon opacity-0 mb-2 leading-tight"></div>
+                        <div id="next-lyric" class="lyrics-font text-sm sm:text-base md:text-lg text-pink-400 opacity-30 leading-tight"></div>
+                    </div>
+                </foreignObject>
+            </svg>
+        </div>
+        
+        <!-- Play Button -->
+        <button id="play-btn" 
+                class="button-glow bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-500 hover:to-red-500 
+                       text-white font-bold py-4 px-8 rounded-full text-lg sm:text-xl md:text-2xl 
+                       transition-all duration-300 transform hover:scale-105 mb-4">
+            Play Our Song
+        </button>
+        
+        <!-- Hidden Audio Element -->
+        <audio id="song-audio" preload="auto">
+            <source src="get.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        
+        <!-- Footer -->
+        <p class="text-pink-300 text-sm sm:text-base opacity-70 text-center mt-8">
+            Made with ❤️ for someone special
+        </p>
+    </div>
+
+    <script>
+        // Lyrics with timestamps (in seconds)
+        const lyrics = [
+            { t: 2, text: "Tum Par Marta Hoon " },
+            { t: 5, text: "Main Sach Kehta Hoon" },
+            { t: 7, text: "Maangke Dekhlo Mujhse Jaan" },
+            
+            
+        ];
+
+        // DOM Elements
+        const heartPath = document.getElementById('heart-path');
+        const spark = document.getElementById('spark');
+        const playBtn = document.getElementById('play-btn');
+        const audio = document.getElementById('song-audio');
+        const currentLyric = document.getElementById('current-lyric');
+        const nextLyric = document.getElementById('next-lyric');
+        const particlesContainer = document.getElementById('particles-container');
+        const heartSvg = document.getElementById('heart-svg');
+
+        // State
+        let isPlaying = false;
+        let heartTimeline;
+        let sparkTimeline;
+        let currentLyricIndex = -1;
+
+        // Initialize GSAP
+        gsap.registerPlugin();
+
+        // Create floating particles
+        function createParticles() {
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle neon-glow';
+                particlesContainer.appendChild(particle);
+
+                // Random position and animation
+                gsap.set(particle, {
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    scale: Math.random() * 0.8 + 0.2
+                });
+
+                // Floating animation
+                gsap.to(particle, {
+                    x: `+=${Math.random() * 200 - 100}`,
+                    y: `+=${Math.random() * 200 - 100}`,
+                    duration: Math.random() * 10 + 10,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut"
+                });
+
+                // Opacity animation
+                gsap.to(particle, {
+                    opacity: Math.random() * 0.5 + 0.2,
+                    duration: Math.random() * 3 + 2,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut"
+                });
+            }
+        }
+
+        // Heart pulsing animation
+        function createHeartPulse() {
+            gsap.to(heartSvg, {
+                scale: 1.05,
+                duration: 2,
+                repeat: -1,
+                yoyo: true,
+                ease: "sine.inOut"
+            });
+        }
+
+        // Heart stroke animation
+        function createHeartStroke() {
+            const pathLength = heartPath.getTotalLength();
+            
+            // Set up the path for animation
+            gsap.set(heartPath, {
+                strokeDasharray: pathLength,
+                strokeDashoffset: pathLength
+            });
+
+            // Create timeline for heart drawing
+            heartTimeline = gsap.timeline({ repeat: -1 });
+            
+            heartTimeline
+                .to(heartPath, {
+                    strokeDashoffset: 0,
+                    duration: 4,
+                    ease: "none"
+                })
+                .to(heartPath, {
+                    strokeDashoffset: -pathLength,
+                    duration: 4,
+                    ease: "none"
+                }, "+=1");
+        }
+
+        // Spark animation along heart path
+        function createSparkAnimation() {
+            const pathLength = heartPath.getTotalLength();
+            
+            sparkTimeline = gsap.timeline({ repeat: -1 });
+            
+            sparkTimeline
+                .set(spark, { opacity: 1 })
+                .to(spark, {
+                    motionPath: {
+                        path: heartPath,
+                        autoRotate: true
+                    },
+                    duration: 4,
+                    ease: "none"
+                })
+                .set(spark, { opacity: 0 })
+                .set(spark, { opacity: 0, duration: 5 });
+        }
+
+        // Update lyrics based on audio time
+        function updateLyrics() {
+            if (!audio || audio.paused) return;
+
+            const currentTime = audio.currentTime;
+            let newLyricIndex = -1;
+
+            // Find current lyric
+            for (let i = lyrics.length - 1; i >= 0; i--) {
+                if (currentTime >= lyrics[i].t) {
+                    newLyricIndex = i;
+                    break;
+                }
+            }
+
+            // Update lyrics if changed
+            if (newLyricIndex !== currentLyricIndex) {
+                currentLyricIndex = newLyricIndex;
+
+                if (currentLyricIndex >= 0) {
+                    // Fade in current lyric
+                    gsap.to(currentLyric, { opacity: 0, duration: 0.3, onComplete: () => {
+                        currentLyric.textContent = lyrics[currentLyricIndex].text;
+                        gsap.to(currentLyric, { opacity: 1, duration: 0.5 });
+                    }});
+
+                    // Show next lyric
+                    const nextIndex = currentLyricIndex + 1;
+                    if (nextIndex < lyrics.length) {
+                        gsap.to(nextLyric, { opacity: 0, duration: 0.3, onComplete: () => {
+                            nextLyric.textContent = lyrics[nextIndex].text;
+                            gsap.to(nextLyric, { opacity: 0.3, duration: 0.5 });
+                        }});
+                    } else {
+                        gsap.to(nextLyric, { opacity: 0, duration: 0.3 });
+                    }
+                }
+            }
+        }
+
+        // Play button functionality
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                audio.pause();
+                playBtn.textContent = 'Play Our Song';
+                gsap.to(playBtn, { scale: 1, duration: 0.3 });
+            } else {
+                audio.play().catch(e => {
+                    console.log('Audio play failed:', e);
+                    playBtn.textContent = 'Audio not available';
+                });
+                playBtn.textContent = 'Playing...';
+                gsap.to(playBtn, { scale: 0.95, duration: 0.3 });
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // Audio event listeners
+        audio.addEventListener('timeupdate', updateLyrics);
+
+        audio.addEventListener('ended', () => {
+            playBtn.textContent = 'Play Our Song';
+            isPlaying = false;
+            currentLyricIndex = -1;
+            gsap.to(currentLyric, { opacity: 0, duration: 0.5 });
+            gsap.to(nextLyric, { opacity: 0, duration: 0.5 });
+            gsap.to(playBtn, { scale: 1, duration: 0.3 });
+        });
+
+        audio.addEventListener('pause', () => {
+            if (isPlaying) {
+                playBtn.textContent = 'Paused';
+                isPlaying = false;
+                gsap.to(playBtn, { scale: 1, duration: 0.3 });
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Recreate particles for new window size
+            particlesContainer.innerHTML = '';
+            createParticles();
+        });
+
+        // Initialize animations
+        function init() {
+            createParticles();
+            createHeartPulse();
+            createHeartStroke();
+            createSparkAnimation();
+        }
+
+        // Start when page loads
+        window.addEventListener('load', init);
+
+        // Fallback for audio loading issues
+        audio.addEventListener('error', () => {
+            playBtn.textContent = 'Audio Unavailable';
+            playBtn.disabled = true;
+            playBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+    </script>
+</body>
+</html>
